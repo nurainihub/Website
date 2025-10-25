@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pendaftaran Wajah WBS</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 40px; }
+    video { border: 2px solid #333; border-radius: 8px; }
+    select, button { margin-top: 15px; padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <h1>📸 Pendaftaran Wajah WBS</h1>
+
+  <label for="wbsSelect">Pilih Nama WBS:</label><br>
+  <select id="wbsSelect"></select><br><br>
+
+  <video id="video" width="400" height="300" autoplay></video><br>
+  <button id="captureBtn">Ambil Gambar</button>
+
+  <script>
+    // Aktifkan webcam
+    const video = document.getElementById('video');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => alert("Tidak dapat mengakses kamera: " + err));
+
+    // Ambil daftar WBS dari server
+    fetch('/api/wbs_list')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('wbsSelect');
+        data.data.forEach(wbs => {
+          const option = document.createElement('option');
+          option.value = wbs.id_wbs;
+          option.text = wbs.nama + (wbs.is_registered ? ' ✅' : '');
+          select.appendChild(option);
+        });
+      });
+
+    // Ambil gambar dari kamera dan kirim ke API
+    document.getElementById('captureBtn').addEventListener('click', async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const image = canvas.toDataURL('image/jpeg');
+
+      const id_wbs = document.getElementById('wbsSelect').value;
+      if (!id_wbs) return alert("Pilih nama WBS dulu!");
+
+      const res = await fetch('/api/daftar_wajah', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_wbs, image })
+      });
+      const result = await res.json();
+      alert(result.message);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Absensi Face Scan WBS</title>
+    <!-- Memuat Tailwind CSS untuk styling modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #video-container { position: relative; width: 100%; max-width: 640px; height: auto; border: 2px solid #3b82f6; border-radius: 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+        #video-webcam { width: 100%; height: 100%; object-fit: cover; }
+        #canvas-wajah { display: none; }
+        #status-absensi { margin-top: 20px; font-size: 1.2em; font-weight: bold; padding: 10px; border-radius: 8px; text-align: center; transition: all 0.3s ease; }
+        .success { color: #15803d; background-color: #dcfce7; border: 1px solid #15803d; }
+        .error { color: #b91c1c; background-color: #fee2e2; border: 1px solid #b91c1c; }
+        .info { color: #1e40af; background-color: #dbeafe; }
+        @media (max-width: 640px) {
+            #video-container { max-width: 95%; height: auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col items-center p-4">
+
+    <h1 class="text-3xl font-extrabold text-blue-700 mb-6">Sistem Absensi Face Scan WBS</h1>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md mb-6">
+        <div class="mb-4">
+            <label for="kegiatan-select" class="block text-sm font-medium text-gray-700 mb-1">Pilih Kegiatan:</label>
+            <select id="kegiatan-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <option value="" disabled selected>-- Pilih Kegiatan --</option>
+                <option value="1">1. Kegiatan Senam</option>
+                <option value="2">2. Kegiatan Kedisiplinan</option>
+                <option value="3">3. Kegiatan Kadarkum</option>
+                <option value="4">4. Kegiatan Konseling Individu</option>
+                <option value="5">5. Konseling Kelompok</option>
+                <option value="6">6. Kegiatan Bimbingan Rohani Islam</option>
+                <option value="7">7. Kegiatan Bimbingan Rohani Kristen</option>
+                <option value="8">8. Kegiatan Sholat Jum'at</option>
+                <option value="9">9. Kegiatan Keterampilan Las</option>
+                <option value="10">10. Kegiatan Keterampilan Montir Mobil</option>
+                <option value="11">11. Kegiatan Keterampilan Montir Motor</option>
+                <option value="12">12. Kegiatan Keterampilan Elektronika</option>
+                <option value="13">13. Kegiatan Keterampilan AC</option>
+                <option value="14">14. Kegiatan Keterampilan Sablon</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="mb-4">
+                <label for="pptk-input" class="block text-sm font-medium text-gray-700 mb-1">Nama PPTK:</label>
+                <input type="text" id="pptk-input" value="Bpk. Adi Sutomo" placeholder="Masukkan Nama PPTK" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <!-- FIELD NARASUMBER MENJADI DROPDOWN -->
+            <div class="mb-4">
+                <label for="narasumber-select" class="block text-sm font-medium text-gray-700 mb-1">Pilih Narasumber:</label>
+                <select id="narasumber-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <option value="Tidak Ada" selected>Tidak Ada / Pelaksana Tunggal</option>
+                    <option value="Yunita Dwi Astuti">1. Yunita Dwi Astuti</option>
+                    <option value="Amin Tri Laksono">2. Amin Tri Laksono</option>
+                    <option value="Wahyuni">3. Wahyuni</option>
+                    <option value="Dian Hica Anggraini">4. Dian Hica Anggraini</option>
+                    <option value="Ayu Hidayati">5. Ayu Hidayati</option>
+                    <option value="Kusnadi, S.Ag">6. Kusnadi, S.Ag</option>
+                    <option value="Albert Loho">7. Albert Loho</option>
+                    <option value="Asti Putri Endah Maharini">8. Asti Putri Endah Maharini</option>
+                    <option value="Ihud Hudori">9. Ihud Hudori</option>
+                    <option value="Amroni Yahya">10. Amroni Yahya</option>
+                    <option value="Syarifuddin, S.Sos">11. Syarifuddin, S.Sos</option>
+                    <option value="Yunus Hadi">12. Yunus Hadi</option>
+                    <option value="Rohmat B. Marsan">13. Rohmat B. Marsan</option>
+                    <option value="Ade Irawan Dwi Ahmad Wahyudi">14. Ade Irawan Dwi Ahmad Wahyudi</option>
+                    <option value="Mashudi">15. Mashudi</option>
+                    <option value="Wildan Baihaqi">16. Wildan Baihaqi</option>
+                    <option value="Budi Hermawan">17. Budi Hermawan</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div id="video-container">
+        <video id="video-webcam" autoplay muted></video>
+        <canvas id="canvas-wajah"></canvas>
+    </div>
+
+    <button onclick="ambilAbsensi()" id="scan-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+        SCAN WAJAH & ABSEN
+    </button>
+    
+    <p id="status-absensi" class="info">Status: Siap memindai...</p>
+
+    <script>
+        const video = document.getElementById('video-webcam');
+        const canvas = document.getElementById('canvas-wajah');
+        const context = canvas.getContext('2d');
+        const statusElement = document.getElementById('status-absensi');
+        const scanButton = document.getElementById('scan-button');
+
+        function initWebcam() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+                    .then(stream => {
+                        video.srcObject = stream;
+                        video.play();
+                        statusElement.textContent = "Status: Kamera aktif. Pilih kegiatan dan isi data pelaksana.";
+                        statusElement.className = 'info';
+                    })
+                    .catch(err => {
+                        statusElement.textContent = "ERROR: Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.";
+                        statusElement.className = 'error';
+                        console.error("Error accessing webcam: ", err);
+                    });
+            } else {
+                statusElement.textContent = "Browser Anda tidak mendukung akses webcam.";
+                statusElement.className = 'error';
+            }
+        }
+        initWebcam();
+
+        function ambilAbsensi() {
+            const selectedKegiatanId = document.getElementById('kegiatan-select').value;
+            const pptkNama = document.getElementById('pptk-input').value; 
+            // Ambil nilai dari dropdown
+            const narasumberNama = document.getElementById('narasumber-select').value; 
+            
+            if (!selectedKegiatanId || !pptkNama) {
+                statusElement.textContent = "Pilih kegiatan dan isi nama PPTK.";
+                statusElement.className = 'error';
+                return;
+            }
+
+            scanButton.disabled = true;
+            scanButton.textContent = 'Menganalisis...';
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            statusElement.textContent = "Memproses wajah, harap tunggu...";
+            statusElement.className = 'info';
+
+            // Mengirim KEDUA nama (PPTK dan Narasumber) ke backend
+            fetch('http://localhost:5000/api/absensi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    image: imageData, 
+                    kegiatan_id: selectedKegiatanId,
+                    pptk_nama: pptkNama, 
+                    narasumber_nama: narasumberNama 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                scanButton.disabled = false;
+                scanButton.textContent = 'SCAN WAJAH & ABSEN';
+
+                if (data.status === 'success') {
+                    statusElement.textContent = data.message + ` | Kegiatan: ${data.kegiatan}`;
+                    statusElement.className = 'success';
+                } else if (data.status === 'failed') {
+                    statusElement.textContent = data.message;
+                    statusElement.className = 'error';
+                } else {
+                    statusElement.textContent = "Absensi Gagal: " + data.message;
+                    statusElement.className = 'error';
+                }
+            })
+            .catch((error) => {
+                scanButton.disabled = false;
+                scanButton.textContent = 'SCAN WAJAH & ABSEN';
+                console.error('Network Error:', error);
+                statusElement.textContent = 'KRITIS: Gagal terhubung ke server (http://localhost:5000). Pastikan app.py berjalan.';
+                statusElement.className = 'error';
+            });
+        }
+    </script>
+</body>
+</html>
